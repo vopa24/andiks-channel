@@ -1,0 +1,15 @@
+{
+  "name": "Andik's Channel",
+  "short_name": "Andik's",
+  "description": "Check today's food, stock and prayer break status at Andik Cafe, Kolej 9 UTM.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0f1420",
+  "theme_color": "#7a0a26",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

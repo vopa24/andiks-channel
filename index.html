@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#7a0a26">
+  <meta name="description" content="Check today's food, stock and prayer break status at Andik Cafe, Kolej 9 UTM.">
+  <title>Andik's Channel</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="student">
+  <header class="app-header">
+    <div class="header-inner">
+      <div>
+        <h1>Andik's Channel</h1>
+        <p class="sub" id="cafe-line">Andik Cafe · Kolej 9 UTM</p>
+      </div>
+      <button class="install-btn" id="install-btn" hidden>Install app</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="status-card status-loading" id="status-card" aria-live="polite">
+      <div class="status-icon" aria-hidden="true"><span class="pulse"></span></div>
+      <div class="status-text">
+        <p class="status-title" id="status-title">Checking cafe status…</p>
+        <p class="status-meta" id="status-meta"></p>
+      </div>
+    </section>
+
+    <section class="menu">
+      <div class="section-head">
+        <h2>Today's food</h2>
+        <span class="updated" id="menu-updated"></span>
+      </div>
+      <div id="menu-list" class="menu-list" aria-live="polite">
+        <div class="food skeleton"></div><div class="food skeleton"></div><div class="food skeleton"></div>
+      </div>
+    </section>
+
+    <section class="tip">
+      <p>Check here before you walk to the cafe. Stock and status are updated by the cafe staff.</p>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <a href="login.html" class="staff-link">Cafe staff? Log in</a>
+  </footer>
+
+  <script type="module" src="js/student.js"></script>
+</body>
+</html>

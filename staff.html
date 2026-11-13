@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#7a0a26">
+  <title>Staff dashboard · Andik's Channel</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="staff" hidden>
+  <header class="app-header">
+    <div class="header-inner">
+      <div>
+        <h1>Today's stock</h1>
+        <p class="sub" id="who">Staff view</p>
+      </div>
+      <div class="header-actions">
+        <a href="index.html" class="ghost-btn" target="_blank" rel="noopener">Student view</a>
+        <button class="ghost-btn" id="logout">Log out</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- US03: cafe status -->
+    <section class="card">
+      <div class="section-head"><h2>Cafe status</h2><span class="updated" id="status-updated"></span></div>
+      <div class="segmented" role="radiogroup" aria-label="Cafe status">
+        <button type="button" role="radio" data-state="open" class="seg seg-open">Open</button>
+        <button type="button" role="radio" data-state="prayer" class="seg seg-prayer">Prayer break</button>
+        <button type="button" role="radio" data-state="closed" class="seg seg-closed">Closed</button>
+      </div>
+      <div class="back-row" id="back-row" hidden>
+        <label for="back-at">Open again at</label>
+        <input type="time" id="back-at">
+      </div>
+      <button class="btn btn-primary" id="save-status">Save status</button>
+    </section>
+
+    <!-- US01: today's food and stock -->
+    <section class="card">
+      <div class="section-head"><h2>Today's food</h2><span class="updated" id="count"></span></div>
+      <div id="staff-list" class="staff-list"></div>
+    </section>
+
+    <section class="card">
+      <h2>Add food to today</h2>
+      <form id="add-form" class="add-form" novalidate>
+        <input id="new-name" type="text" placeholder="Food name" maxlength="60" aria-label="Food name">
+        <input id="new-stock" type="number" inputmode="numeric" min="0" step="1" placeholder="Stock" aria-label="Stock">
+        <button class="btn btn-primary" type="submit">Add</button>
+      </form>
+      <p class="form-error" id="add-error" role="alert" hidden></p>
+      <div id="previous-wrap" hidden>
+        <p class="mini-label">Previous items, tap to add back to today</p>
+        <div id="previous" class="chips"></div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="js/staff.js"></script>
+</body>
+</html>
