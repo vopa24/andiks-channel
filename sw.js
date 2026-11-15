@@ -1,5 +1,5 @@
 // Service worker: caches the app shell so it opens fast and works offline.
-const CACHE = "andiks-v2";
+const CACHE = "andiks-v3";
 const SHELL = [
   "./", "./index.html", "./login.html", "./staff.html",
   "./css/style.css", "./js/store.js", "./js/ui.js", "./js/student.js", "./js/login.js", "./js/staff.js", "./js/firebase-config.js",

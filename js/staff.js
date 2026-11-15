@@ -16,12 +16,13 @@ function selectState(state) {
 }
 
 function renderStatus(s) {
-  if (s && s.state) {
+  const setToday = s && s.updatedAt && todayKey(new Date(s.updatedAt)) === todayKey();
+  if (s && s.state && setToday) {
     selectState(s.state);
     $("#back-at").value = s.backAt || "";
     $("#status-updated").textContent = s.updatedAt ? `Saved ${timeLabel(s.updatedAt)}` : "";
   } else {
-    $("#status-updated").textContent = "Not set yet";
+    $("#status-updated").textContent = "Not set yet today";
   }
 }
 

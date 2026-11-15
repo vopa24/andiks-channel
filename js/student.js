@@ -1,5 +1,5 @@
 // US02 (today's food + stock) and US04 (opening hours + current status)
-import { getStore } from "./store.js";
+import { getStore, todayKey } from "./store.js";
 import { CAFE } from "./firebase-config.js";
 import { $, esc, timeLabel, backAtLabel, initials, demoBanner, registerSW, setupInstall } from "./ui.js";
 
@@ -18,7 +18,9 @@ function renderStatus(s) {
   const card = $("#status-card");
   const badge = $("#status-badge");
   card.className = "status-card";
-  if (!s || !STATUS[s.state]) {
+  // A status only counts for the day it was set, so yesterday's status is never shown as live
+  const setToday = s && s.updatedAt && todayKey(new Date(s.updatedAt)) === todayKey();
+  if (!s || !STATUS[s.state] || !setToday) {
     // US04 AC3: no status set yet, show normal opening hours only
     card.classList.add("status-none");
     badge.hidden = true;

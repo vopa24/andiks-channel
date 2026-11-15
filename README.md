@@ -37,7 +37,7 @@ Demo mode works without Firebase. Data is saved only on that device.
 - [ ] After refresh, staff stays logged in until Log out
 - [ ] Empty or negative stock is not saved and shows an error
 - [ ] Open / Prayer break (with back time) / Closed shows on the student page
-- [ ] No status set → only opening hours are shown
+- [ ] No status set today → only opening hours are shown (a status only counts for the day it was set)
 - [ ] Works on two phones (Android + iPhone), and "Install app" / Add to Home Screen works
 
 ## Files
