@@ -3,12 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#7a0a26">
+  <meta name="theme-color" content="#FAF6EE">
   <meta name="description" content="Check today's food, stock and prayer break status at Andik Cafe, Kolej 9 UTM.">
   <title>Andik's Channel</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body class="student">
@@ -24,8 +27,9 @@
 
   <main class="container">
     <section class="status-card status-loading" id="status-card" aria-live="polite">
-      <div class="status-icon" aria-hidden="true"><span class="pulse"></span></div>
+      <div class="status-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9"/><path d="M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/><path d="M5 12v8h14v-8"/><path d="M10 20v-5h4v5"/></svg></div>
       <div class="status-text">
+        <span class="status-badge" id="status-badge" hidden></span>
         <p class="status-title" id="status-title">Checking cafe status…</p>
         <p class="status-meta" id="status-meta"></p>
       </div>
@@ -37,7 +41,7 @@
         <span class="updated" id="menu-updated"></span>
       </div>
       <div id="menu-list" class="menu-list" aria-live="polite">
-        <div class="food skeleton"></div><div class="food skeleton"></div><div class="food skeleton"></div>
+        <div class="food skeleton"></div><div class="food skeleton"></div>
       </div>
     </section>
 

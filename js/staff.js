@@ -1,6 +1,6 @@
 // US01 (update food + stock) and US03 (set cafe status). US05: page needs login.
 import { getStore, cleanName, validateStock, todayKey } from "./store.js";
-import { $, esc, timeLabel, toast, demoBanner, registerSW, initials, hueFor } from "./ui.js";
+import { $, esc, timeLabel, toast, demoBanner, registerSW, initials } from "./ui.js";
 
 registerSW();
 
@@ -36,7 +36,7 @@ function renderToday(items) {
   }
   list.innerHTML = items.map((it) => `
     <div class="stock-row ${it.stock <= 0 ? "sold" : ""}" data-id="${it.id}">
-      <div class="avatar sm" style="--h:${hueFor(it.name)}">${esc(initials(it.name))}</div>
+      <div class="avatar sm">${esc(initials(it.name))}</div>
       <div class="stock-name">
         <span>${esc(it.name)}</span>
         ${it.stock <= 0 ? `<span class="pill pill-out">Sold out</span>` : ""}
