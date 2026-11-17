@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#FAF6EE">
+  <title>My account · Andik's Channel</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="login-page">
+  <div class="login-top">
+    <a href="index.html" class="back">‹ Student view</a>
+    <div class="emblem" aria-hidden="true"><svg viewBox="0 0 64 64" fill="none"><path d="M32 52C32 52 12 42 12 22C24 22 32 30 32 52Z" fill="#BA3801"/><path d="M32 52C32 52 54 38 52 14C36 14 32 28 32 52Z" fill="#4A69B3"/><circle cx="32" cy="16" r="5" fill="#FFEC89"/></svg></div>
+    <p class="brand">Andik's Channel</p>
+    <p class="brand-sub">Andik Cafe · Kolej 9 UTM</p>
+  </div>
+
+  <main class="login-card">
+    <!-- Log in / Create account -->
+    <div class="form" id="auth-box" hidden>
+      <div class="tabs" role="tablist">
+        <button type="button" class="tab active" id="tab-login" role="tab" aria-selected="true">Log in</button>
+        <button type="button" class="tab" id="tab-signup" role="tab" aria-selected="false">Create account</button>
+      </div>
+
+      <form class="form" id="c-login-form" novalidate>
+        <h1>Welcome back</h1>
+        <p class="sub">Log in to see your saved details</p>
+        <div class="field">
+          <label for="l-email">Email</label>
+          <input id="l-email" type="email" autocomplete="username" placeholder="you@example.com">
+        </div>
+        <div class="field">
+          <label for="l-password">Password</label>
+          <input id="l-password" type="password" autocomplete="current-password" placeholder="Your password">
+        </div>
+        <p class="form-error" id="c-login-error" role="alert" hidden></p>
+        <button class="btn btn-primary" id="c-login-btn" type="submit">Log in</button>
+      </form>
+
+      <form class="form" id="c-signup-form" novalidate hidden>
+        <h1>Create account</h1>
+        <p class="sub">First time here? Save your details once</p>
+        <div class="field">
+          <label for="s-name">Full name</label>
+          <input id="s-name" type="text" autocomplete="name" maxlength="80" placeholder="Your full name">
+        </div>
+        <div class="field">
+          <label for="s-phone">Phone number</label>
+          <input id="s-phone" type="tel" autocomplete="tel" maxlength="16" placeholder="e.g. 0123456789">
+        </div>
+        <div class="field">
+          <label for="s-email">Email</label>
+          <input id="s-email" type="email" autocomplete="username" placeholder="you@example.com">
+        </div>
+        <div class="field">
+          <label for="s-password">Password</label>
+          <input id="s-password" type="password" autocomplete="new-password" placeholder="At least 6 characters">
+        </div>
+        <p class="form-error" id="c-signup-error" role="alert" hidden></p>
+        <button class="btn btn-primary" id="c-signup-btn" type="submit">Create account</button>
+      </form>
+    </div>
+
+    <!-- Saved details -->
+    <div class="form" id="profile-box" hidden>
+      <h1 id="p-hello">My account</h1>
+      <p class="sub">Your saved details</p>
+      <dl class="profile">
+        <div><dt>Full name</dt><dd id="p-name">…</dd></div>
+        <div><dt>Phone number</dt><dd id="p-phone">…</dd></div>
+        <div><dt>Email</dt><dd id="p-email">…</dd></div>
+      </dl>
+      <a class="btn btn-light" href="index.html">See today's food</a>
+      <button class="btn btn-primary" id="c-logout" type="button">Log out</button>
+    </div>
+  </main>
+
+  <script type="module" src="js/account.js"></script>
+</body>
+</html>

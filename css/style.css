@@ -249,3 +249,15 @@ label, .mini-label { font-size: .76rem; color: var(--muted); font-weight: 700; }
   .rider-row { grid-template-columns: auto 1fr auto; grid-template-areas: "ph info act"; }
   .mini-btn { flex: none; }
 }
+
+/* Customer accounts (US06) */
+.tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: var(--navy-dark); padding: 5px; border-radius: 16px; }
+.tab { border: 0; background: transparent; color: #DCE6FB; border-radius: 12px; padding: 11px 6px; font-weight: 800; font-size: .86rem; cursor: pointer; }
+.tab.active { background: var(--butter); color: var(--navy-dark); }
+.login-card .form .form { max-width: none; }
+.profile { display: grid; gap: 10px; }
+.profile div { background: var(--cream); border-radius: 16px; padding: 11px 16px; }
+.profile dt { font-size: .7rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--navy-dark); }
+.profile dd { color: var(--text); font-weight: 700; font-size: .98rem; margin-top: 2px; overflow-wrap: anywhere; }
+.btn-light { display: block; text-align: center; text-decoration: none; background: var(--butter); color: var(--navy-dark); width: 100%; margin-top: 8px; }
+.login-card .btn-light + .btn-primary { margin-top: 0; }

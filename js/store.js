@@ -29,6 +29,14 @@ export function validateRider({ name, matric, phone, photo }) {
   if (!photo) return "Please add a photo of your matric card.";
   return null;
 }
+// US06 (customer accounts): check the sign-up form before creating the account
+export function validateCustomer({ name, phone, email, password }) {
+  if (!cleanName(name)) return "Please enter your full name.";
+  if (!/^\+?[0-9]{9,13}$/.test(String(phone || "").replace(/[\s-]/g, ""))) return "Please enter a valid phone number.";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || "").trim())) return "Please enter a valid email.";
+  if (String(password || "").length < 6) return "Password must be at least 6 characters.";
+  return null;
+}
 const RIDER_STATES = ["pending", "approved", "rejected"];
 
 /* ---------------- Demo mode (localStorage) ---------------- */
@@ -64,9 +72,16 @@ function demoStore() {
 
   function sub(fn) { listeners.add(fn); fn(); return () => listeners.delete(fn); }
   const authSubs = new Set();
+  // Demo accounts: staff use any email with the demo password, customers sign up on the account page
   function currentUser() {
-    try { const v = localStorage.getItem(AUTH); return v ? { email: v } : null; } catch (e) { return null; }
+    try {
+      const v = localStorage.getItem(AUTH); if (!v) return null;
+      if (v[0] !== "{") return { email: v, uid: v, isStaff: true }; // older demo sessions
+      return JSON.parse(v);
+    } catch (e) { return null; }
   }
+  function setUser(u) { u ? localStorage.setItem(AUTH, JSON.stringify(u)) : localStorage.removeItem(AUTH); authSubs.forEach((fn) => fn(currentUser())); }
+  const authError = (code) => { const e = new Error(code); e.code = code; return e; };
 
   return {
     onStatus(cb) { return sub(() => cb(load().status || null)); },
@@ -95,10 +110,25 @@ function demoStore() {
     onAuth(cb) { authSubs.add(cb); cb(currentUser()); return () => authSubs.delete(cb); },
     async login(email, password) {
       await new Promise((r) => setTimeout(r, 450));
-      if (!email || password !== DEMO_PASSWORD) { const e = new Error("auth/invalid-credential"); e.code = "auth/invalid-credential"; throw e; }
-      localStorage.setItem(AUTH, email); authSubs.forEach((fn) => fn(currentUser()));
+      const key = String(email || "").trim().toLowerCase();
+      const c = (load().customers || {})[key];
+      if (c) { if (c.password !== password) throw authError("auth/invalid-credential"); setUser({ email: key, uid: key, isStaff: false }); return; }
+      if (!key || password !== DEMO_PASSWORD) throw authError("auth/invalid-credential");
+      setUser({ email: key, uid: key, isStaff: true });
     },
-    async logout() { localStorage.removeItem(AUTH); authSubs.forEach((fn) => fn(null)); },
+    async logout() { setUser(null); },
+    // Customer accounts (US06)
+    async signUp({ name, phone, email, password }) {
+      await new Promise((r) => setTimeout(r, 450));
+      const d = load(); d.customers = d.customers || {};
+      const key = String(email).trim().toLowerCase();
+      if (d.customers[key]) throw authError("auth/email-already-in-use");
+      d.customers[key] = { name, phone, email: key, password, createdAt: Date.now() }; save(d);
+      setUser({ email: key, uid: key, isStaff: false });
+    },
+    onProfile(uid, cb) {
+      return sub(() => { const c = (load().customers || {})[uid]; cb(c ? { name: c.name, phone: c.phone, email: c.email, createdAt: c.createdAt } : null); });
+    },
     // Rider verification (US10)
     async submitRiderRequest({ name, matric, phone, photo }) {
       const d = load(); d.riders = d.riders || {};
@@ -180,9 +210,25 @@ async function firebaseStore() {
       batch.delete(F.doc(db, "riderStatus", id));
       await batch.commit();
     },
-    onAuth(cb) { return A.onAuthStateChanged(auth, (u) => cb(u ? { email: u.email } : null)); },
+    // A logged-in account is staff only if it has a document in the "staff" collection (added by our team)
+    onAuth(cb) {
+      return A.onAuthStateChanged(auth, async (u) => {
+        if (!u) { cb(null); return; }
+        let isStaff = false;
+        try { isStaff = (await F.getDoc(F.doc(db, "staff", u.uid))).exists(); } catch (e) { isStaff = false; }
+        cb({ email: u.email, uid: u.uid, isStaff });
+      });
+    },
     async login(email, password) { await A.signInWithEmailAndPassword(auth, email, password); },
-    async logout() { await A.signOut(auth); }
+    async logout() { await A.signOut(auth); },
+    // Customer accounts (US06): the account is in Firebase Authentication, the saved details in "customers"
+    async signUp({ name, phone, email, password }) {
+      const cred = await A.createUserWithEmailAndPassword(auth, email, password);
+      await F.setDoc(F.doc(db, "customers", cred.user.uid), { name, phone, email: cred.user.email, createdAt: F.serverTimestamp() });
+    },
+    onProfile(uid, cb) {
+      return F.onSnapshot(F.doc(db, "customers", uid), (s) => cb(s.exists() ? { ...s.data(), createdAt: ms(s.data().createdAt) } : null), () => cb(null));
+    }
   };
 }
 

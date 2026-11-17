@@ -68,6 +68,14 @@ function renderMenu(items) {
 }
 
 getStore().then((store) => {
+  // US06: show the customer's name when logged in
+  store.onAuth((user) => {
+    const link = $("#account-link");
+    if (!user) { link.textContent = "Log in"; link.href = "account.html"; return; }
+    if (user.isStaff) { link.textContent = "Staff page"; link.href = "staff.html"; return; }
+    link.textContent = "My account"; link.href = "account.html";
+  });
+
   store.onStatus(renderStatus);
   store.onTodayItems(renderMenu);
 }).catch(() => {

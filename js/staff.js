@@ -101,6 +101,7 @@ getStore().then((s) => {
   store.onAuth((user) => {
     // US05 AC4: staff page without login goes to the login page
     if (!user) { location.replace("login.html"); return; }
+    if (!user.isStaff) { location.replace("account.html"); return; } // customers cannot open the staff page
     if (document.body.hidden) { document.body.hidden = false; demoBanner(); }
     $("#who").textContent = `Logged in as ${user.email}`;
   });
