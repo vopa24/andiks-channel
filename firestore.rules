@@ -17,5 +17,33 @@ service cloud.firestore {
         && request.resource.data.stock >= 0;
       allow delete: if request.auth != null;
     }
+    // Rider verification (US10): anyone can send one request with a matric card photo,
+    // but only logged-in staff can read, approve, reject or delete it.
+    match /riderRequests/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['name', 'matric', 'phone', 'photo', 'status', 'createdAt'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 80
+        && request.resource.data.matric is string
+        && request.resource.data.matric.size() >= 5 && request.resource.data.matric.size() <= 12
+        && request.resource.data.phone is string
+        && request.resource.data.phone.size() >= 9 && request.resource.data.phone.size() <= 20
+        && request.resource.data.photo is string
+        && request.resource.data.photo.size() > 0 && request.resource.data.photo.size() <= 700000
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdAt == request.time;
+      allow read, delete: if request.auth != null;
+      allow update: if request.auth != null
+        && request.resource.data.status in ['pending', 'approved', 'rejected'];
+    }
+    // The rider checks the result here. It holds the status only, no personal data.
+    match /riderStatus/{id} {
+      allow get: if true;
+      allow list, delete: if request.auth != null;
+      allow create: if request.resource.data.keys().hasOnly(['status'])
+        && request.resource.data.status == 'pending';
+      allow update: if request.auth != null
+        && request.resource.data.keys().hasOnly(['status'])
+        && request.resource.data.status in ['pending', 'approved', 'rejected'];
+    }
   }
 }

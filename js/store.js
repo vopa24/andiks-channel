@@ -21,6 +21,16 @@ export function validateStock(value) {
   return null;
 }
 
+// US10 (rider verification): check the rider form before saving
+export function validateRider({ name, matric, phone, photo }) {
+  if (!cleanName(name)) return "Please enter your full name.";
+  if (!/^[A-Za-z0-9]{5,12}$/.test(String(matric || "").trim())) return "Please enter a valid matric number.";
+  if (!/^\+?[0-9]{9,13}$/.test(String(phone || "").replace(/[\s-]/g, ""))) return "Please enter a valid phone number.";
+  if (!photo) return "Please add a photo of your matric card.";
+  return null;
+}
+const RIDER_STATES = ["pending", "approved", "rejected"];
+
 /* ---------------- Demo mode (localStorage) ---------------- */
 function demoStore() {
   const KEY = "andiks-demo-v1";
@@ -89,6 +99,20 @@ function demoStore() {
       localStorage.setItem(AUTH, email); authSubs.forEach((fn) => fn(currentUser()));
     },
     async logout() { localStorage.removeItem(AUTH); authSubs.forEach((fn) => fn(null)); },
+    // Rider verification (US10)
+    async submitRiderRequest({ name, matric, phone, photo }) {
+      const d = load(); d.riders = d.riders || {};
+      const id = "r" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+      d.riders[id] = { name, matric, phone, photo, status: "pending", createdAt: Date.now() }; save(d);
+      return id;
+    },
+    onRiderStatus(id, cb) { return sub(() => { const r = (load().riders || {})[id]; cb(r ? r.status : null); }); },
+    onRiderRequests(cb) { return sub(() => cb(Object.entries(load().riders || {}).map(([id, v]) => ({ id, ...v })))); },
+    async setRiderStatus(id, status) {
+      const d = load(); if (!d.riders || !d.riders[id] || !RIDER_STATES.includes(status)) return;
+      d.riders[id].status = status; save(d);
+    },
+    async deleteRiderRequest(id) { const d = load(); if (d.riders) { delete d.riders[id]; save(d); } },
     resetDemo() { localStorage.removeItem(KEY); listeners.forEach((fn) => fn()); }
   };
 }
@@ -127,6 +151,35 @@ async function firebaseStore() {
     async setStock(id, stock) { await F.updateDoc(F.doc(db, "items", id), { stock: Number(stock), onMenuDate: todayKey(), updatedAt: F.serverTimestamp() }); },
     async putOnToday(id) { await F.updateDoc(F.doc(db, "items", id), { onMenuDate: todayKey(), updatedAt: F.serverTimestamp() }); },
     async removeFromToday(id) { await F.updateDoc(F.doc(db, "items", id), { onMenuDate: "", updatedAt: F.serverTimestamp() }); },
+    // Rider verification (US10). The request (with the matric card photo) can only be read by staff.
+    // The rider only reads a small status document, so the photo is never public.
+    async submitRiderRequest({ name, matric, phone, photo }) {
+      const ref = F.doc(F.collection(db, "riderRequests"));
+      const batch = F.writeBatch(db);
+      batch.set(ref, { name, matric, phone, photo, status: "pending", createdAt: F.serverTimestamp() });
+      batch.set(F.doc(db, "riderStatus", ref.id), { status: "pending" });
+      await batch.commit();
+      return ref.id;
+    },
+    onRiderStatus(id, cb) {
+      return F.onSnapshot(F.doc(db, "riderStatus", id), (s) => cb(s.exists() ? s.data().status : null), () => cb(null));
+    },
+    onRiderRequests(cb) {
+      return F.onSnapshot(F.collection(db, "riderRequests"), (snap) => cb(snap.docs.map((d) => ({ id: d.id, ...d.data(), createdAt: ms(d.data().createdAt) }))), () => cb([]));
+    },
+    async setRiderStatus(id, status) {
+      if (!RIDER_STATES.includes(status)) return;
+      const batch = F.writeBatch(db);
+      batch.update(F.doc(db, "riderRequests", id), { status });
+      batch.set(F.doc(db, "riderStatus", id), { status });
+      await batch.commit();
+    },
+    async deleteRiderRequest(id) {
+      const batch = F.writeBatch(db);
+      batch.delete(F.doc(db, "riderRequests", id));
+      batch.delete(F.doc(db, "riderStatus", id));
+      await batch.commit();
+    },
     onAuth(cb) { return A.onAuthStateChanged(auth, (u) => cb(u ? { email: u.email } : null)); },
     async login(email, password) { await A.signInWithEmailAndPassword(auth, email, password); },
     async logout() { await A.signOut(auth); }

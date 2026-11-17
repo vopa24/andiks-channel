@@ -9,6 +9,7 @@ A PWA for Andik Cafe (Kolej 9 UTM). Sprint 1 covers US01–US05:
 | US03 | Staff set Open / Prayer break (with back time) / Closed | `staff.html` |
 | US04 | Students see opening hours and live status | `index.html` |
 | US05 | Staff login, wrong password error, stays logged in, staff page blocked without login | `login.html` |
+| US10 (early) | Student registers as a rider with a matric card photo, staff approve or reject (added early after lecturer and owner feedback) | `riders.html`, `staff.html` |
 
 ## 1. Try it now (demo mode)
 Demo mode works without Firebase. Data is saved only on that device.
@@ -38,11 +39,14 @@ Demo mode works without Firebase. Data is saved only on that device.
 - [ ] Empty or negative stock is not saved and shows an error
 - [ ] Open / Prayer break (with back time) / Closed shows on the student page
 - [ ] No status set today → only opening hours are shown (a status only counts for the day it was set)
+- [ ] Rider form: missing name, matric, phone or photo shows an error and nothing is sent
+- [ ] Rider request shows on the staff page, photo opens big, Approve / Reject shows on the rider page
 - [ ] Works on two phones (Android + iPhone), and "Install app" / Add to Home Screen works
 
 ## Files
 ```
 index.html        student home (US02, US04)
+riders.html       rider registration and result (US10)
 login.html        staff login (US05)
 staff.html        staff dashboard (US01, US03)
 css/style.css     design

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#FAF6EE">
+  <title>Rider registration · Andik's Channel</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="login-page">
+  <div class="login-top">
+    <a href="index.html" class="back">‹ Student view</a>
+    <div class="emblem" aria-hidden="true"><svg viewBox="0 0 64 64" fill="none"><path d="M32 52C32 52 12 42 12 22C24 22 32 30 32 52Z" fill="#BA3801"/><path d="M32 52C32 52 54 38 52 14C36 14 32 28 32 52Z" fill="#4A69B3"/><circle cx="32" cy="16" r="5" fill="#FFEC89"/></svg></div>
+    <p class="brand">Andik's Channel</p>
+    <p class="brand-sub">Andik Cafe · Kolej 9 UTM</p>
+  </div>
+
+  <main class="login-card">
+    <!-- Registration form -->
+    <form class="form" id="rider-form" novalidate hidden>
+      <h1>Become a Rider</h1>
+      <p class="sub">Only verified UTM students can deliver. Cafe staff will check your matric card.</p>
+      <div class="field">
+        <label for="r-name">Full name</label>
+        <input id="r-name" type="text" autocomplete="name" maxlength="80" placeholder="Your full name">
+      </div>
+      <div class="field">
+        <label for="r-matric">Matric number</label>
+        <input id="r-matric" type="text" autocapitalize="characters" maxlength="12" placeholder="e.g. A24CS1234">
+      </div>
+      <div class="field">
+        <label for="r-phone">Phone number</label>
+        <input id="r-phone" type="tel" autocomplete="tel" maxlength="16" placeholder="e.g. 0123456789">
+      </div>
+      <div class="field">
+        <label for="r-photo">Matric card photo</label>
+        <input id="r-photo" type="file" accept="image/*" class="file-input">
+        <label for="r-photo" class="file-btn" id="r-photo-btn">Take or choose a photo</label>
+        <img id="r-preview" class="photo-preview" alt="Your matric card photo" hidden>
+      </div>
+      <p class="hint">Your matric card photo is only seen by cafe staff.</p>
+      <p class="form-error" id="rider-error" role="alert" hidden></p>
+      <button class="btn btn-primary" id="rider-btn" type="submit">Send for verification</button>
+    </form>
+
+    <!-- Result -->
+    <div class="form rider-result" id="rider-result" hidden>
+      <span class="result-badge" id="result-badge"></span>
+      <h1 id="result-title"></h1>
+      <p class="sub" id="result-text"></p>
+      <button class="btn btn-primary" id="rider-again" type="button" hidden>Register again</button>
+    </div>
+  </main>
+
+  <script type="module" src="js/riders.js"></script>
+</body>
+</html>

@@ -58,6 +58,34 @@ function renderPrevious() {
   $("#previous").innerHTML = prev.map((i) => `<button class="chip" data-id="${i.id}">+ ${esc(i.name)}</button>`).join("");
 }
 
+// US10: staff check the matric card photo, then approve or reject the rider
+const RIDER_PILL = { pending: ["Waiting", "pill-wait"], approved: ["Approved", "pill-ok"], rejected: ["Rejected", "pill-out"] };
+function renderRiders(list) {
+  const order = { pending: 0, approved: 1, rejected: 2 };
+  list.sort((a, b) => (order[a.status] - order[b.status]) || (b.createdAt - a.createdAt));
+  const waiting = list.filter((r) => r.status === "pending").length;
+  $("#rider-count").textContent = waiting ? `${waiting} waiting` : "";
+  const box = $("#rider-list");
+  if (!list.length) { box.innerHTML = `<p class="muted">No rider requests yet.</p>`; return; }
+  box.innerHTML = list.map((r) => {
+    const [label, cls] = RIDER_PILL[r.status] || RIDER_PILL.pending;
+    return `
+    <div class="rider-row" data-id="${esc(r.id)}">
+      <button class="rider-photo" data-act="photo" aria-label="Open matric card photo of ${esc(r.name)}"><img src="${esc(r.photo)}" alt=""></button>
+      <div class="rider-info">
+        <span class="rider-name">${esc(r.name)} <span class="pill ${cls}">${label}</span></span>
+        <span class="rider-meta">${esc(r.matric)} · ${esc(r.phone)}</span>
+        <span class="rider-meta">Sent ${esc(timeLabel(r.createdAt))}</span>
+      </div>
+      <div class="rider-actions">
+        ${r.status === "pending"
+          ? `<button class="mini-btn mini-ok" data-act="approve">Approve</button><button class="mini-btn mini-no" data-act="reject">Reject</button>`
+          : `<button class="mini-btn" data-act="delete">Delete</button>`}
+      </div>
+    </div>`;
+  }).join("");
+}
+
 async function saveStock(id, value, row) {
   const err = validateStock(value);
   if (err) { toast(err, "err"); renderToday(todayItems); return false; } // US01 AC4: not saved, old value restored
@@ -80,6 +108,23 @@ getStore().then((s) => {
   store.onStatus(renderStatus);
   store.onTodayItems(renderToday);
   store.onAllItems((items) => { allItems = items; renderPrevious(); });
+
+  store.onRiderRequests(renderRiders);
+
+  $("#rider-list").addEventListener("click", async (e) => {
+    const btn = e.target.closest("button"); if (!btn) return;
+    const row = btn.closest(".rider-row"); const id = row.dataset.id; const act = btn.dataset.act;
+    if (act === "photo") { const v = $("#photo-view"); v.querySelector("img").src = btn.querySelector("img").src; v.hidden = false; return; }
+    try {
+      if (act === "approve") { await store.setRiderStatus(id, "approved"); toast("Rider approved"); }
+      if (act === "reject") { await store.setRiderStatus(id, "rejected"); toast("Rider rejected"); }
+      if (act === "delete") {
+        if (btn.dataset.sure !== "1") { btn.dataset.sure = "1"; btn.textContent = "Tap again to delete"; return; }
+        await store.deleteRiderRequest(id); toast("Request deleted");
+      }
+    } catch (ex) { toast("Couldn't save. Check your connection.", "err"); }
+  });
+  $("#photo-view").addEventListener("click", () => { $("#photo-view").hidden = true; });
 
   document.querySelectorAll(".seg").forEach((b) => b.addEventListener("click", () => selectState(b.dataset.state)));
 

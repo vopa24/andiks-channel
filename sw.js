@@ -1,8 +1,8 @@
 // Service worker: caches the app shell so it opens fast and works offline.
-const CACHE = "andiks-v3";
+const CACHE = "andiks-v4";
 const SHELL = [
-  "./", "./index.html", "./login.html", "./staff.html",
-  "./css/style.css", "./js/store.js", "./js/ui.js", "./js/student.js", "./js/login.js", "./js/staff.js", "./js/firebase-config.js",
+  "./", "./index.html", "./login.html", "./staff.html", "./riders.html",
+  "./css/style.css", "./js/store.js", "./js/ui.js", "./js/student.js", "./js/login.js", "./js/staff.js", "./js/riders.js", "./js/firebase-config.js",
   "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png"
 ];
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL))); self.skipWaiting(); });
