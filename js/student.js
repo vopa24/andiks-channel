@@ -90,7 +90,10 @@ function renderSheet() {
       <div class="two-btns"><a class="btn btn-light" href="account.html#login">Log in</a><a class="btn btn-primary" href="account.html#signup">Sign up</a></div>`;
     return;
   }
-  if (user.isStaff) { box.innerHTML = ""; return; }
+  if (user.isStaff) {
+    box.innerHTML = `<p class="sheet-note">You are logged in as staff, so you can't reserve. To test as a student, use another phone or a private window and log in with a student account.</p>`;
+    return;
+  }
   const inCart = getCart()[it.id] || 0;
   const room = Math.max(0, it.stock - inCart);
   if (!room) { box.innerHTML = `<p class="sheet-note">You already have all ${it.stock} in your cart.</p><a class="btn btn-primary" href="cart.html">Go to cart</a>`; return; }
