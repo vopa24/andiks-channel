@@ -1,7 +1,7 @@
 // US02 (today's food + stock) and US04 (opening hours + current status)
 import { getStore, todayKey } from "./store.js";
 import { CAFE } from "./firebase-config.js";
-import { $, esc, timeLabel, backAtLabel, initials, demoBanner, registerSW, setupInstall } from "./ui.js";
+import { $, esc, timeLabel, backAtLabel, demoBanner, registerSW, setupInstall, getCart, setCart, cartCount, foodPic, toast } from "./ui.js";
 
 demoBanner();
 registerSW();
@@ -41,7 +41,11 @@ function stockLabel(stock) {
   return `<span class="food-stock ${stock <= 5 ? "low" : ""}">Available • ${stock} left</span>`;
 }
 
+let user = null, menu = [], openId = null;
+
 function renderMenu(items) {
+  menu = items;
+  if (openId) renderSheet();
   const list = $("#menu-list");
   if (!items.length) {
     // US02 AC4
@@ -56,29 +60,90 @@ function renderMenu(items) {
   }
   items.sort((a, b) => (b.stock > 0) - (a.stock > 0) || a.name.localeCompare(b.name));
   list.innerHTML = items.map((it) => `
-    <article class="food ${it.stock <= 0 ? "sold" : ""}">
+    <button type="button" class="food ${it.stock <= 0 ? "sold" : ""}" data-id="${esc(it.id)}" aria-label="${esc(it.name)}, see details">
       <div class="food-top">
         ${stockLabel(it.stock)}
-        <div class="avatar">${esc(initials(it.name))}${it.stock <= 0 ? `<span class="sold-tag">SOLD OUT</span>` : ""}</div>
+        <div class="avatar">${foodPic(it)}${it.stock <= 0 ? `<span class="sold-tag">SOLD OUT</span>` : ""}</div>
       </div>
-      <div class="food-body"><h3>${esc(it.name)}</h3></div>
-    </article>`).join("");
+      <div class="food-body"><h3>${esc(it.name)}</h3>${it.desc ? `<p class="food-desc">${esc(it.desc)}</p>` : ""}</div>
+    </button>`).join("");
   const last = Math.max(...items.map((i) => i.updatedAt || 0));
   $("#menu-updated").textContent = last ? `Updated ${timeLabel(last)}` : ""; // US02 AC3
 }
 
+// Food details sheet: photo, description, and add to cart
+function openSheet(id) { openId = id; renderSheet(); $("#food-sheet").hidden = false; document.body.classList.add("no-scroll"); }
+function closeSheet() { openId = null; $("#food-sheet").hidden = true; document.body.classList.remove("no-scroll"); }
+let pickQty = 1;
+function renderSheet() {
+  const it = menu.find((m) => m.id === openId);
+  if (!it) { closeSheet(); return; }
+  $("#fs-pic").innerHTML = foodPic(it, "big");
+  $("#fs-name").textContent = it.name;
+  $("#fs-stock").innerHTML = stockLabel(it.stock);
+  $("#fs-desc").textContent = it.desc || "No description yet.";
+  $("#fs-desc").classList.toggle("muted-desc", !it.desc);
+  const box = $("#fs-actions");
+  if (it.stock <= 0) { box.innerHTML = `<p class="sheet-note">Sold out today.</p>`; return; }
+  if (!user) {
+    box.innerHTML = `<p class="sheet-note">Log in to reserve this food.</p>
+      <div class="two-btns"><a class="btn btn-light" href="account.html#login">Log in</a><a class="btn btn-primary" href="account.html#signup">Sign up</a></div>`;
+    return;
+  }
+  if (user.isStaff) { box.innerHTML = ""; return; }
+  const inCart = getCart()[it.id] || 0;
+  const room = Math.max(0, it.stock - inCart);
+  if (!room) { box.innerHTML = `<p class="sheet-note">You already have all ${it.stock} in your cart.</p><a class="btn btn-primary" href="cart.html">Go to cart</a>`; return; }
+  pickQty = Math.min(Math.max(1, pickQty), room);
+  box.innerHTML = `
+    ${inCart ? `<p class="sheet-note">${inCart} already in your cart.</p>` : ""}
+    <div class="qty-row">
+      <div class="stepper"><button class="step" data-q="-1" aria-label="Less">−</button><span class="qty-val" id="fs-qty">${pickQty}</span><button class="step" data-q="1" aria-label="More">+</button></div>
+      <button class="btn btn-primary" id="fs-add">Add to cart</button>
+    </div>`;
+}
+
 getStore().then((store) => {
-  // US06: show the customer's name when logged in
-  store.onAuth((user) => {
-    const link = $("#account-link");
-    if (!user) { link.textContent = "Log in"; link.href = "account.html"; return; }
-    if (user.isStaff) { link.textContent = "Staff page"; link.href = "staff.html"; return; }
-    link.textContent = "My account"; link.href = "account.html";
+  // Header and footer change with who is logged in
+  store.onAuth((u) => {
+    user = u;
+    const customer = u && !u.isStaff;
+    $("#login-link").hidden = !!u; $("#signup-link").hidden = !!u;
+    const acc = $("#account-link"); acc.hidden = !u;
+    if (u) { acc.textContent = u.isStaff ? "Staff page" : "My account"; acc.href = u.isStaff ? "staff.html" : "account.html"; }
+    $("#staff-link").hidden = !!customer; // a logged-in student does not need the staff login
+    updateCartBar();
+    if (openId) renderSheet();
   });
 
   store.onStatus(renderStatus);
   store.onTodayItems(renderMenu);
-}).catch(() => {
+});
+
+function updateCartBar() {
+  const n = cartCount();
+  $("#cart-bar").hidden = !(user && !user.isStaff && n > 0);
+  $("#cart-bar-count").textContent = n;
+}
+window.addEventListener("cartchange", updateCartBar);
+
+$("#menu-list").addEventListener("click", (e) => { const c = e.target.closest(".food[data-id]"); if (c) { pickQty = 1; openSheet(c.dataset.id); } });
+$("#fs-close").addEventListener("click", closeSheet);
+$("#food-sheet").addEventListener("click", (e) => { if (e.target.id === "food-sheet") closeSheet(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && openId) closeSheet(); });
+$("#fs-actions").addEventListener("click", (e) => {
+  const q = e.target.closest("[data-q]");
+  if (q) { pickQty += Number(q.dataset.q); renderSheet(); return; }
+  if (e.target.closest("#fs-add")) {
+    const it = menu.find((m) => m.id === openId); if (!it) return;
+    const cart = getCart(); const now = cart[it.id] || 0;
+    cart[it.id] = Math.min(it.stock, now + pickQty); setCart(cart);
+    toast(`${pickQty} × ${it.name} added to cart`);
+    closeSheet();
+  }
+});
+
+getStore().catch(() => {
   $("#status-title").textContent = "Can't connect right now";
   $("#menu-list").innerHTML = `<div class="empty"><p class="empty-title">Can't load the menu</p><p class="empty-sub">Check your internet and refresh.</p></div>`;
 });

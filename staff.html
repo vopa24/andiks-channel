@@ -42,6 +42,12 @@
       <button class="btn btn-primary" id="save-status">Save status</button>
     </section>
 
+    <!-- Reservations from customers -->
+    <section class="card">
+      <div class="section-head"><h2>Reservations today</h2><span class="updated" id="res-count"></span></div>
+      <div id="res-list" class="staff-list"></div>
+    </section>
+
     <!-- US01: today's food and stock -->
     <section class="card">
       <div class="section-head"><h2>Today's food</h2><span class="updated" id="count"></span></div>
@@ -68,6 +74,25 @@
       <div id="rider-list" class="staff-list"></div>
     </section>
   </main>
+
+  <!-- Food photo and description editor -->
+  <div class="sheet-back" id="edit-sheet" hidden>
+    <form class="sheet" id="edit-form" novalidate role="dialog" aria-modal="true" aria-labelledby="ed-title">
+      <button type="button" class="sheet-close" id="ed-close" aria-label="Close">✕</button>
+      <h2 id="ed-title">Photo and description</h2>
+      <div class="sheet-pic" id="ed-pic"></div>
+      <div class="two-btns">
+        <input id="ed-photo" type="file" accept="image/*" class="file-input">
+        <label for="ed-photo" class="btn btn-light" id="ed-photo-btn">Add photo</label>
+        <button type="button" class="btn btn-ghost" id="ed-remove">Remove photo</button>
+      </div>
+      <label for="ed-desc" class="ed-label">Description (ingredients, taste, spicy or not)</label>
+      <textarea id="ed-desc" maxlength="300" rows="4" placeholder="e.g. Fried chicken with buttermilk sauce, rice and egg. A bit spicy."></textarea>
+      <p class="ed-count" id="ed-count">0 / 300</p>
+      <p class="form-error" id="ed-error" role="alert" hidden></p>
+      <button class="btn btn-primary" id="ed-save" type="submit">Save</button>
+    </form>
+  </div>
 
   <div class="photo-view" id="photo-view" hidden><img alt="Matric card photo"><p>Tap anywhere to close</p></div>
 

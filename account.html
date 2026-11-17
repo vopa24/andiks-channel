@@ -23,9 +23,14 @@
   <main class="login-card">
     <!-- Log in / Create account -->
     <div class="form" id="auth-box" hidden>
-      <div class="tabs" role="tablist">
-        <button type="button" class="tab active" id="tab-login" role="tab" aria-selected="true">Log in</button>
-        <button type="button" class="tab" id="tab-signup" role="tab" aria-selected="false">Create account</button>
+      <p class="choose-label">Choose one</p>
+      <div class="choice" role="tablist">
+        <button type="button" class="choice-btn active" id="tab-login" role="tab" aria-selected="true">
+          <span class="choice-title">Log in</span><span class="choice-sub">I already have an account</span>
+        </button>
+        <button type="button" class="choice-btn" id="tab-signup" role="tab" aria-selected="false">
+          <span class="choice-title">Sign up</span><span class="choice-sub">I'm new here</span>
+        </button>
       </div>
 
       <form class="form" id="c-login-form" novalidate>
@@ -45,7 +50,7 @@
 
       <form class="form" id="c-signup-form" novalidate hidden>
         <h1>Create account</h1>
-        <p class="sub">First time here? Save your details once</p>
+        <p class="sub">First time here? Create your account and save your details once</p>
         <div class="field">
           <label for="s-name">Full name</label>
           <input id="s-name" type="text" autocomplete="name" maxlength="80" placeholder="Your full name">
@@ -76,6 +81,10 @@
         <div><dt>Phone number</dt><dd id="p-phone">…</dd></div>
         <div><dt>Email</dt><dd id="p-email">…</dd></div>
       </dl>
+      <div class="res-box" id="reservations">
+        <h2>My reservations</h2>
+        <div id="my-res"><p class="sub">Loading…</p></div>
+      </div>
       <a class="btn btn-light" href="index.html">See today's food</a>
       <button class="btn btn-primary" id="c-logout" type="button">Log out</button>
     </div>

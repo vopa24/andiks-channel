@@ -59,3 +59,51 @@ export function setupInstall(btn) {
   window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); evt = e; btn.hidden = false; });
   btn.addEventListener("click", async () => { if (!evt) return; evt.prompt(); await evt.userChoice; evt = null; btn.hidden = true; });
 }
+
+// Make a photo small enough to save, on the phone before sending (JPEG)
+export function shrinkImage(file, { max = 1000, target = 450000, limit = 650000, quality = 0.72 } = {}) {
+  return new Promise((resolve, reject) => {
+    if (!file || !/^image\//.test(file.type || "image/")) { reject(new Error("not-image")); return; }
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      let q = quality, m = max, out = "";
+      for (let i = 0; i < 6; i++) {
+        const scale = Math.min(1, m / Math.max(img.width, img.height));
+        const c = document.createElement("canvas");
+        c.width = Math.round(img.width * scale); c.height = Math.round(img.height * scale);
+        const ctx = c.getContext("2d"); ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        out = c.toDataURL("image/jpeg", q);
+        if (out.length <= target) break;
+        m = Math.round(m * 0.8); q = Math.max(0.4, q - 0.08);
+      }
+      URL.revokeObjectURL(url);
+      out.length <= limit ? resolve(out) : reject(new Error("too-big"));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("not-image")); };
+    img.src = url;
+  });
+}
+
+// Cart: saved on this phone only, as { itemId: quantity }
+const CART_KEY = "andiks-cart";
+export function getCart() {
+  try { const c = JSON.parse(localStorage.getItem(CART_KEY) || "{}"); return c && typeof c === "object" ? c : {}; }
+  catch (e) { return {}; }
+}
+export function setCart(cart) {
+  const clean = {};
+  Object.entries(cart || {}).forEach(([id, q]) => { const n = Math.floor(Number(q)); if (n > 0) clean[id] = Math.min(n, 50); });
+  try { localStorage.setItem(CART_KEY, JSON.stringify(clean)); } catch (e) { /* ignore */ }
+  window.dispatchEvent(new Event("cartchange"));
+}
+export function cartCount(cart = getCart()) { return Object.values(cart).reduce((a, b) => a + b, 0); }
+window.addEventListener("storage", (e) => { if (e.key === CART_KEY) window.dispatchEvent(new Event("cartchange")); });
+
+// Food picture: the photo if staff added one, otherwise the initials
+export function foodPic(it, cls = "") {
+  return it.photo
+    ? `<img class="food-img ${cls}" src="${esc(it.photo)}" alt="">`
+    : `<span class="food-initials ${cls}">${esc(initials(it.name))}</span>`;
+}

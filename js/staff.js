@@ -1,6 +1,6 @@
 // US01 (update food + stock) and US03 (set cafe status). US05: page needs login.
-import { getStore, cleanName, validateStock, todayKey } from "./store.js";
-import { $, esc, timeLabel, toast, demoBanner, registerSW, initials } from "./ui.js";
+import { getStore, cleanName, validateStock, todayKey, validateItemDetails } from "./store.js";
+import { $, esc, timeLabel, toast, demoBanner, registerSW, foodPic, shrinkImage } from "./ui.js";
 
 registerSW();
 
@@ -37,10 +37,11 @@ function renderToday(items) {
   }
   list.innerHTML = items.map((it) => `
     <div class="stock-row ${it.stock <= 0 ? "sold" : ""}" data-id="${it.id}">
-      <div class="avatar sm">${esc(initials(it.name))}</div>
+      <button class="avatar sm" data-act="edit" aria-label="Photo and description of ${esc(it.name)}">${foodPic(it)}</button>
       <div class="stock-name">
         <span>${esc(it.name)}</span>
         ${it.stock <= 0 ? `<span class="pill pill-out">Sold out</span>` : ""}
+        <button class="link-btn" data-act="edit">${it.photo || it.desc ? "Edit photo / description" : "+ Add photo / description"}</button>
       </div>
       <div class="stepper">
         <button class="step" data-act="dec" aria-label="Decrease stock of ${esc(it.name)}">−</button>
@@ -86,6 +87,53 @@ function renderRiders(list) {
   }).join("");
 }
 
+// Food photo and description editor
+let editId = null, editPhoto = "";
+function openEditor(id) {
+  const it = allItems.find((i) => i.id === id) || todayItems.find((i) => i.id === id); if (!it) return;
+  editId = id; editPhoto = it.photo || "";
+  $("#ed-title").textContent = it.name;
+  $("#ed-desc").value = it.desc || ""; $("#ed-count").textContent = `${($("#ed-desc").value).length} / 300`;
+  $("#ed-error").hidden = true;
+  showEditPic(it.name);
+  $("#edit-sheet").hidden = false; document.body.classList.add("no-scroll");
+}
+function showEditPic(name) {
+  $("#ed-pic").innerHTML = foodPic({ name: name || $("#ed-title").textContent, photo: editPhoto }, "big");
+  $("#ed-photo-btn").textContent = editPhoto ? "Change photo" : "Add photo";
+  $("#ed-remove").hidden = !editPhoto;
+}
+function closeEditor() { editId = null; $("#edit-sheet").hidden = true; document.body.classList.remove("no-scroll"); $("#edit-form").reset(); }
+
+// Reservations: accept (stock goes down), reject, then collected or not collected (stock comes back)
+const RES_PILL = {
+  pending: ["New", "pill-wait"], accepted: ["Accepted", "pill-ok"], rejected: ["Rejected", "pill-out"],
+  collected: ["Collected", "pill-done"], notcollected: ["Not collected", "pill-out"], cancelled: ["Cancelled by customer", "pill-done"]
+};
+function renderReservations(list) {
+  const order = { pending: 0, accepted: 1 };
+  list.sort((a, b) => ((order[a.status] ?? 2) - (order[b.status] ?? 2)) || ((a.createdAt || 0) - (b.createdAt || 0)));
+  const waiting = list.filter((r) => r.status === "pending").length;
+  $("#res-count").textContent = waiting ? `${waiting} new` : "";
+  const box = $("#res-list");
+  if (!list.length) { box.innerHTML = `<p class="muted">No reservations today yet.</p>`; return; }
+  box.innerHTML = list.map((r) => {
+    const [label, cls] = RES_PILL[r.status] || RES_PILL.pending;
+    const actions = r.status === "pending"
+      ? `<button class="mini-btn mini-ok" data-act="accepted">Accept</button><button class="mini-btn mini-no" data-act="rejected">Reject</button>`
+      : r.status === "accepted"
+        ? `<button class="mini-btn mini-ok" data-act="collected">Collected</button><button class="mini-btn" data-act="notcollected">Not collected</button>`
+        : "";
+    return `
+    <div class="res-row ${r.status}" data-id="${esc(r.id)}">
+      <div class="res-top"><span class="rider-name">${esc(r.name)}</span><span class="pill ${cls}">${label}</span></div>
+      <span class="rider-meta">${esc(r.phone)} · ${esc(timeLabel(r.createdAt))}</span>
+      <ul class="res-items">${(r.items || []).map((i) => `<li>${i.qty} × ${esc(i.name)}</li>`).join("")}</ul>
+      ${actions ? `<div class="rider-actions">${actions}</div>` : ""}
+    </div>`;
+  }).join("");
+}
+
 async function saveStock(id, value, row) {
   const err = validateStock(value);
   if (err) { toast(err, "err"); renderToday(todayItems); return false; } // US01 AC4: not saved, old value restored
@@ -109,6 +157,40 @@ getStore().then((s) => {
   store.onStatus(renderStatus);
   store.onTodayItems(renderToday);
   store.onAllItems((items) => { allItems = items; renderPrevious(); });
+
+  store.onReservations(renderReservations);
+  $("#res-list").addEventListener("click", async (e) => {
+    const btn = e.target.closest("button[data-act]"); if (!btn) return;
+    const id = btn.closest(".res-row").dataset.id; const status = btn.dataset.act;
+    btn.disabled = true;
+    try {
+      await store.setReservationStatus(id, status);
+      toast({ accepted: "Accepted. Stock updated.", rejected: "Reservation rejected", collected: "Marked as collected", notcollected: "Not collected. Stock added back." }[status]);
+    } catch (ex) { toast(ex.userMessage || "Couldn't save. Check your connection.", "err"); btn.disabled = false; }
+  });
+
+  // Photo and description editor
+  $("#ed-photo").addEventListener("change", async (e) => {
+    const f = e.target.files && e.target.files[0]; if (!f) return;
+    $("#ed-error").hidden = true;
+    try { editPhoto = await shrinkImage(f, { max: 700, target: 160000, limit: 290000 }); showEditPic(); }
+    catch (ex) { $("#ed-error").textContent = "This file is not a photo we can use. Please choose another one."; $("#ed-error").hidden = false; }
+    e.target.value = "";
+  });
+  $("#ed-remove").addEventListener("click", () => { editPhoto = ""; showEditPic(); });
+  $("#ed-desc").addEventListener("input", () => { $("#ed-count").textContent = `${$("#ed-desc").value.length} / 300`; });
+  $("#ed-close").addEventListener("click", closeEditor);
+  $("#edit-sheet").addEventListener("click", (e) => { if (e.target.id === "edit-sheet") closeEditor(); });
+  $("#edit-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const data = { photo: editPhoto, desc: $("#ed-desc").value.trim().replace(/\s+/g, " ") };
+    const problem = validateItemDetails(data);
+    if (problem) { $("#ed-error").textContent = problem; $("#ed-error").hidden = false; return; }
+    const btn = $("#ed-save"); btn.disabled = true; btn.textContent = "Saving…";
+    try { await store.setItemDetails(editId, data); toast("Photo and description saved"); closeEditor(); }
+    catch (ex) { $("#ed-error").textContent = "Couldn't save. Check your connection."; $("#ed-error").hidden = false; }
+    finally { btn.disabled = false; btn.textContent = "Save"; }
+  });
 
   store.onRiderRequests(renderRiders);
 
@@ -146,6 +228,7 @@ getStore().then((s) => {
     if (btn.dataset.act === "inc") { input.value = Number(input.value || 0) + 1; await saveStock(id, input.value, row); }
     if (btn.dataset.act === "dec") { if (Number(input.value) > 0) { input.value = Number(input.value) - 1; await saveStock(id, input.value, row); } }
     if (btn.dataset.act === "remove") { await store.removeFromToday(id); toast("Removed from today's menu"); }
+    if (btn.dataset.act === "edit") openEditor(id);
   });
 
   $("#staff-list").addEventListener("change", async (e) => {

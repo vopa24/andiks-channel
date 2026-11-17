@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#FAF6EE">
+  <title>My cart · Andik's Channel</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="cart-page">
+  <header class="app-header">
+    <div class="header-inner">
+      <div>
+        <h1>My Cart</h1>
+        <p class="sub">Reserve now, pick up at Andik Cafe</p>
+      </div>
+      <div class="header-actions">
+        <a href="index.html" class="ghost-btn">‹ Menu</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Not logged in -->
+    <section class="card" id="need-login" hidden>
+      <h2>Log in to reserve</h2>
+      <p class="muted">You need an account to reserve food.</p>
+      <div class="two-btns"><a class="btn btn-light" href="account.html#login">Log in</a><a class="btn btn-primary" href="account.html#signup">Sign up</a></div>
+    </section>
+
+    <!-- Cart -->
+    <section class="card" id="cart-box" hidden>
+      <div class="section-head"><h2>Food in your cart</h2><span class="updated" id="cart-count"></span></div>
+      <div id="cart-list" class="staff-list"></div>
+      <p class="form-error" id="cart-error" role="alert" hidden></p>
+      <div id="cart-foot">
+        <p class="pickup-note" id="pickup-note"></p>
+        <button class="btn btn-primary" id="reserve-btn" type="button">Reserve</button>
+      </div>
+    </section>
+
+    <!-- Done -->
+    <section class="card done-card" id="done-box" hidden>
+      <span class="result-badge">Waiting for the cafe</span>
+      <h2>Reservation sent</h2>
+      <p class="muted">The cafe staff will accept it soon. You can see the status in My account.</p>
+      <div class="two-btns"><a class="btn btn-light" href="index.html">Back to menu</a><a class="btn btn-primary" href="account.html#reservations">My reservations</a></div>
+    </section>
+  </main>
+
+  <script type="module" src="js/cart.js"></script>
+</body>
+</html>

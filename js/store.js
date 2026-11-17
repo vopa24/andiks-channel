@@ -37,6 +37,14 @@ export function validateCustomer({ name, phone, email, password }) {
   if (String(password || "").length < 6) return "Password must be at least 6 characters.";
   return null;
 }
+// Food photo and description (added by staff)
+export function validateItemDetails({ photo, desc }) {
+  if (String(desc || "").length > 300) return "Description is too long (max 300 characters).";
+  if (photo && photo.length > 300000) return "Photo is too big. Please choose another one.";
+  return null;
+}
+export const RES_STATES = ["pending", "accepted", "rejected", "collected", "notcollected", "cancelled"];
+function resError(msg) { const e = new Error(msg); e.code = "reservation/" + msg; e.userMessage = msg; return e; }
 const RIDER_STATES = ["pending", "approved", "rejected"];
 
 /* ---------------- Demo mode (localStorage) ---------------- */
@@ -143,6 +151,44 @@ function demoStore() {
       d.riders[id].status = status; save(d);
     },
     async deleteRiderRequest(id) { const d = load(); if (d.riders) { delete d.riders[id]; save(d); } },
+    // Food photo and description
+    async setItemDetails(id, { photo, desc }) {
+      const d = load(); if (!d.items[id]) return;
+      d.items[id] = { ...d.items[id], photo: photo || "", desc: desc || "", updatedAt: Date.now() }; save(d);
+    },
+    // Reservations: the customer reserves food from the cart, staff accept it (stock goes down)
+    async createReservation({ uid, name, phone, items }) {
+      const d = load(); d.reservations = d.reservations || {};
+      const id = "v" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      d.reservations[id] = { uid, name, phone, items, count: items.reduce((a, i) => a + i.qty, 0), status: "pending", createdAt: Date.now() };
+      save(d); return id;
+    },
+    onMyReservations(uid, cb) { return sub(() => cb(Object.entries(load().reservations || {}).filter(([, v]) => v.uid === uid).map(([id, v]) => ({ id, ...v })))); },
+    onReservations(cb) {
+      return sub(() => {
+        const t = todayKey();
+        cb(Object.entries(load().reservations || {}).filter(([, v]) => todayKey(new Date(v.createdAt)) === t).map(([id, v]) => ({ id, ...v })));
+      });
+    },
+    async setReservationStatus(id, status) {
+      const d = load(); const r = (d.reservations || {})[id]; if (!r || !RES_STATES.includes(status)) return;
+      if (status === "accepted") {
+        for (const it of r.items) {
+          const item = d.items[it.id];
+          if (!item || item.stock < it.qty) throw resError(`Not enough ${it.name} left. Reject it or update the stock first.`);
+        }
+        r.items.forEach((it) => { d.items[it.id].stock -= it.qty; d.items[it.id].updatedAt = Date.now(); });
+      }
+      if (status === "notcollected" && r.status === "accepted") {
+        r.items.forEach((it) => { if (d.items[it.id]) { d.items[it.id].stock += it.qty; d.items[it.id].updatedAt = Date.now(); } });
+      }
+      r.status = status; r.updatedAt = Date.now(); save(d);
+    },
+    async cancelReservation(id) {
+      const d = load(); const r = (d.reservations || {})[id];
+      if (!r || r.status !== "pending") throw resError("This reservation can't be cancelled now.");
+      r.status = "cancelled"; r.updatedAt = Date.now(); save(d);
+    },
     resetDemo() { localStorage.removeItem(KEY); listeners.forEach((fn) => fn()); }
   };
 }
@@ -162,6 +208,7 @@ async function firebaseStore() {
   const itemsCol = F.collection(db, "items");
   const ms = (ts) => (ts && ts.toMillis ? ts.toMillis() : (typeof ts === "number" ? ts : Date.now()));
   const mapDoc = (s) => ({ id: s.id, ...s.data(), updatedAt: ms(s.data().updatedAt) });
+  const mapRes = (d) => ({ id: d.id, ...d.data(), createdAt: ms(d.data().createdAt), updatedAt: ms(d.data().updatedAt) });
 
   return {
     onStatus(cb) { return F.onSnapshot(statusRef, (s) => cb(s.exists() ? { ...s.data(), updatedAt: ms(s.data().updatedAt) } : null), () => cb(null)); },
@@ -181,6 +228,52 @@ async function firebaseStore() {
     async setStock(id, stock) { await F.updateDoc(F.doc(db, "items", id), { stock: Number(stock), onMenuDate: todayKey(), updatedAt: F.serverTimestamp() }); },
     async putOnToday(id) { await F.updateDoc(F.doc(db, "items", id), { onMenuDate: todayKey(), updatedAt: F.serverTimestamp() }); },
     async removeFromToday(id) { await F.updateDoc(F.doc(db, "items", id), { onMenuDate: "", updatedAt: F.serverTimestamp() }); },
+    // Food photo and description (public, students see them)
+    async setItemDetails(id, { photo, desc }) {
+      await F.updateDoc(F.doc(db, "items", id), { photo: photo || "", desc: desc || "", updatedAt: F.serverTimestamp() });
+    },
+    // Reservations: the customer reserves from the cart; staff accept it and the stock goes down
+    async createReservation({ uid, name, phone, items }) {
+      const ref = await F.addDoc(F.collection(db, "reservations"), {
+        uid, name, phone, items, count: items.reduce((a, i) => a + i.qty, 0), status: "pending", createdAt: F.serverTimestamp()
+      });
+      return ref.id;
+    },
+    onMyReservations(uid, cb) {
+      const q = F.query(F.collection(db, "reservations"), F.where("uid", "==", uid));
+      return F.onSnapshot(q, (snap) => cb(snap.docs.map(mapRes)), () => cb([]));
+    },
+    onReservations(cb) {
+      const start = F.Timestamp.fromDate(new Date(`${todayKey()}T00:00:00+08:00`));
+      const q = F.query(F.collection(db, "reservations"), F.where("createdAt", ">=", start));
+      return F.onSnapshot(q, (snap) => cb(snap.docs.map(mapRes)), () => cb([]));
+    },
+    async setReservationStatus(id, status) {
+      if (!RES_STATES.includes(status)) return;
+      const rRef = F.doc(db, "reservations", id);
+      await F.runTransaction(db, async (tx) => {
+        const rs = await tx.get(rRef); if (!rs.exists()) throw resError("This reservation no longer exists.");
+        const r = rs.data();
+        const take = status === "accepted" && r.status === "pending";
+        const give = status === "notcollected" && r.status === "accepted";
+        if (take || give) {
+          const refs = r.items.map((it) => F.doc(db, "items", it.id));
+          const snaps = [];
+          for (const ref of refs) snaps.push(await tx.get(ref));
+          if (take) snaps.forEach((sn, i) => {
+            if (!sn.exists() || sn.data().stock < r.items[i].qty) throw resError(`Not enough ${r.items[i].name} left. Reject it or update the stock first.`);
+          });
+          snaps.forEach((sn, i) => {
+            if (!sn.exists()) return;
+            tx.update(refs[i], { stock: sn.data().stock + (take ? -r.items[i].qty : r.items[i].qty), updatedAt: F.serverTimestamp() });
+          });
+        }
+        tx.update(rRef, { status, updatedAt: F.serverTimestamp() });
+      });
+    },
+    async cancelReservation(id) {
+      await F.updateDoc(F.doc(db, "reservations", id), { status: "cancelled", updatedAt: F.serverTimestamp() });
+    },
     // Rider verification (US10). The request (with the matric card photo) can only be read by staff.
     // The rider only reads a small status document, so the photo is never public.
     async submitRiderRequest({ name, matric, phone, photo }) {

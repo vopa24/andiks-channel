@@ -11,6 +11,8 @@ A PWA for Andik Cafe (Kolej 9 UTM). Sprint 1 covers US01–US05:
 | US05 | Staff login, wrong password error, stays logged in, staff page blocked without login | `login.html` |
 | US10 (early) | Student registers as a rider with a matric card photo, staff approve or reject (added early after lecturer and owner feedback) | `riders.html`, `staff.html` |
 | US06 (early) | Customer creates an account (name, phone, email, password), logs in and sees the saved details (added early after owner feedback) | `account.html` |
+| Owner request | Staff add a photo and description to each food; students tap a food to see them | `staff.html`, `index.html` |
+| US07 (early, pick-up) | Logged-in customer adds food to a cart and reserves it for pick-up; staff accept (stock goes down), reject, then mark collected or not collected (stock comes back); customer can cancel while waiting | `cart.html`, `account.html`, `staff.html` |
 
 ## 1. Try it now (demo mode)
 Demo mode works without Firebase. Data is saved only on that device.
@@ -51,11 +53,16 @@ To make an account staff:
 - [ ] Rider request shows on the staff page, photo opens big, Approve / Reject shows on the rider page
 - [ ] Customer: create account, log out, log in again → saved name and phone are shown
 - [ ] Customer account cannot open the staff page or log in on the staff login
+- [ ] Staff add a photo and description → students see them on the card and in the details
+- [ ] Logged-in customer: staff login link is hidden; Log in and Sign up are separate buttons when logged out
+- [ ] Add to cart (cannot add more than the stock), reserve, staff accept → stock goes down
+- [ ] Customer cancels while waiting; staff "Not collected" adds the stock back
 - [ ] Works on two phones (Android + iPhone), and "Install app" / Add to Home Screen works
 
 ## Files
 ```
 index.html        student home (US02, US04)
+cart.html         cart and reservation (pick-up)
 account.html      customer sign up, login and saved details (US06)
 riders.html       rider registration and result (US10)
 login.html        staff login (US05)

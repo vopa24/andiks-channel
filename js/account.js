@@ -1,6 +1,6 @@
 // US06: customer sign up, log in and saved details
 import { getStore, cleanName, validateCustomer } from "./store.js";
-import { $, demoBanner, registerSW } from "./ui.js";
+import { $, esc, timeLabel, demoBanner, registerSW, setCart, toast } from "./ui.js";
 
 demoBanner();
 registerSW();
@@ -14,6 +14,28 @@ function showTab(which) {
 $("#tab-login").addEventListener("click", () => showTab("login"));
 $("#tab-signup").addEventListener("click", () => showTab("signup"));
 if (location.hash === "#signup") showTab("signup");
+if (location.hash === "#login") showTab("login");
+
+// Reservation status for the customer
+const RES_LABEL = {
+  pending: ["Waiting for the cafe", "pill-wait"], accepted: ["Accepted, ready to pick up", "pill-ok"],
+  rejected: ["Rejected by the cafe", "pill-out"], collected: ["Collected", "pill-done"],
+  notcollected: ["Not collected", "pill-out"], cancelled: ["Cancelled by you", "pill-done"]
+};
+function renderMyRes(list) {
+  const box = $("#my-res");
+  if (!list.length) { box.innerHTML = `<p class="sub">No reservations yet. Add food to your cart from the menu.</p>`; return; }
+  list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+  box.innerHTML = list.slice(0, 10).map((r) => {
+    const [label, cls] = RES_LABEL[r.status] || RES_LABEL.pending;
+    return `
+    <div class="res-card" data-id="${esc(r.id)}">
+      <div class="res-top"><span class="pill ${cls}">${label}</span><span class="res-time">${esc(timeLabel(r.createdAt))}</span></div>
+      <ul class="res-items">${r.items.map((i) => `<li>${i.qty} × ${esc(i.name)}</li>`).join("")}</ul>
+      ${r.status === "pending" ? `<button class="mini-btn mini-no" data-act="cancel">Cancel reservation</button>` : ""}
+    </div>`;
+  }).join("");
+}
 
 function authMessage(ex, fallback) {
   const code = (ex && ex.code) || "";
@@ -27,14 +49,16 @@ function authMessage(ex, fallback) {
 }
 
 getStore().then((store) => {
-  let stopProfile = null;
+  let stopProfile = null, stopRes = null;
 
   store.onAuth((user) => {
     if (stopProfile) { stopProfile(); stopProfile = null; }
+    if (stopRes) { stopRes(); stopRes = null; }
     if (!user) { $("#profile-box").hidden = true; $("#auth-box").hidden = false; return; }
     if (user.isStaff) { location.replace("staff.html"); return; }
     $("#auth-box").hidden = true; $("#profile-box").hidden = false;
     $("#p-email").textContent = user.email;
+    stopRes = store.onMyReservations(user.uid, renderMyRes);
     // The saved details come back from the database every time the customer logs in
     stopProfile = store.onProfile(user.uid, (p) => {
       $("#p-name").textContent = p ? p.name : "Not saved yet";
@@ -71,5 +95,12 @@ getStore().then((store) => {
     finally { btn.disabled = false; btn.textContent = "Create account"; }
   });
 
-  $("#c-logout").addEventListener("click", async () => { await store.logout(); showTab("login"); });
+  $("#c-logout").addEventListener("click", async () => { setCart({}); await store.logout(); showTab("login"); });
+
+  $("#my-res").addEventListener("click", async (e) => {
+    const btn = e.target.closest("[data-act=cancel]"); if (!btn) return;
+    if (btn.dataset.sure !== "1") { btn.dataset.sure = "1"; btn.textContent = "Tap again to cancel"; return; }
+    try { await store.cancelReservation(btn.closest(".res-card").dataset.id); toast("Reservation cancelled"); }
+    catch (ex) { toast("Couldn't cancel. The cafe may have already accepted it.", "err"); }
+  });
 });

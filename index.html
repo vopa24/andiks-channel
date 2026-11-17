@@ -23,7 +23,11 @@
       </div>
       <div class="header-actions">
         <button class="install-btn" id="install-btn" hidden>Install app</button>
-        <a href="account.html" class="ghost-btn" id="account-link">Log in</a>
+        <!-- Shown when logged out: two separate buttons -->
+        <a href="account.html#login" class="ghost-btn" id="login-link">Log in</a>
+        <a href="account.html#signup" class="solid-btn" id="signup-link">Sign up</a>
+        <!-- Shown when logged in -->
+        <a href="account.html" class="ghost-btn" id="account-link" hidden>My account</a>
       </div>
     </div>
   </header>
@@ -55,8 +59,25 @@
 
   <footer class="app-footer">
     <a href="riders.html" class="staff-link">Want to be a rider? Register</a>
-    <a href="login.html" class="staff-link">Cafe staff? Log in</a>
+    <a href="login.html" class="staff-link" id="staff-link">Cafe staff? Log in</a>
   </footer>
+
+  <!-- Cart bar (customers) -->
+  <a href="cart.html" class="cart-bar" id="cart-bar" hidden>
+    <span>View cart</span><span class="cart-bar-count" id="cart-bar-count">0</span>
+  </a>
+
+  <!-- Food details -->
+  <div class="sheet-back" id="food-sheet" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="fs-name">
+      <button class="sheet-close" id="fs-close" aria-label="Close">✕</button>
+      <div class="sheet-pic" id="fs-pic"></div>
+      <h2 id="fs-name"></h2>
+      <p class="sheet-stock" id="fs-stock"></p>
+      <p class="sheet-desc" id="fs-desc"></p>
+      <div class="sheet-actions" id="fs-actions"></div>
+    </div>
+  </div>
 
   <script type="module" src="js/student.js"></script>
 </body>
